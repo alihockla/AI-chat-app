@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { display: flex; gap: 24px; height: 72vh; } /* give columns vertical space */
+    .column { flex: 1; display: flex; flex-direction: column; }
+    h3 { margin: 0 0 8px 0; }
+
+    ul { list-style: none; padding-left: 0; margin: 0; }
+    li { padding: 6px 8px; border-radius: 6px; margin: 4px 0; word-break: break-word; }
+
+    /* history / live styles */
+    .history { color: #555; background: #f3f3f3; }
+    .user { background: #e6f7ff; }
+    .ai { background: #fff3e6; }
+
+    /* scrollable areas */
+    #history, #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    /* input area at bottom of live chat column */
+    .input-row { display: flex; gap: 8px; margin-top: 8px; }
+    #messageText { flex: 1; padding: 8px; font-size: 14px; }
+    button { padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Chat</h1>
+
+  <div class="container">
+    <div class="column">
+      <h3>Previous Conversation</h3>
+      <ul id="history"></ul>
+    </div>
+
+    <div class="column">
+      <h3>Live Chat</h3>
+      <ul id="messages"></ul>
+
+      <!-- moved the form *inside* the Live Chat column so it appears under the messages -->
+      <form onsubmit="sendMessage(event)" class="input-row" style="margin-top: 12px;">
+        <input type="text" id="messageText" autocomplete="off" placeholder="Type a message..." />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // mapping from backend role to display name
+    const roleMap = {
+      user: "You",
+      ai: "AI"
+    };
+
+    // Per-tab client id (sessionStorage = per-tab and survives refresh in that tab)
+    let clientId = sessionStorage.getItem("client_id");
+    if (!clientId) {
+      clientId = crypto.randomUUID();
+      sessionStorage.setItem("client_id", clientId);
+    }
+
+    const historyList = document.getElementById('history');
+    const messagesList = document.getElementById('messages');
+
+    // use current host so it works whether localhost or other host:port
+    const ws = new WebSocket(`ws://${location.host}/ws?client_id=${clientId}`);
+
+    // Keep track whether we've finished rendering history
+    let historyDone = false;
+
+    ws.onmessage = function(event) {
+      const data = event.data;
+
+      if (data.startsWith("HISTORY::")) {
+        // Format: HISTORY::role: content
+        const payload = data.replace("HISTORY::", "");
+        const colonIndex = payload.indexOf(':');
+        let role = "unknown";
+        let content = payload;
+        if (colonIndex !== -1) {
+          role = payload.slice(0, colonIndex).trim();
+          content = payload.slice(colonIndex + 1).trim();
+        }
+        const displayRole = roleMap[role] || role;
+        const li = document.createElement('li');
+        li.className = 'history ' + role;
+        li.textContent = `${displayRole}: ${content}`;
+        historyList.appendChild(li);
+        // scroll to bottom of history
+        historyList.scrollTop = historyList.scrollHeight;
+      }
+      else if (data === "HISTORY_END") {
+        historyDone = true;
+        const divider = document.createElement('li');
+        divider.textContent = '--- Live chat below ---';
+        divider.style.color = '#888';
+        divider.style.listStyle = 'none';
+        messagesList.appendChild(divider);
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+      else if (data.startsWith("MESSAGE::")) {
+        // Format: MESSAGE::role: content
+        const payload = data.replace("MESSAGE::", "");
+        const colonIndex = payload.indexOf(':');
+        let role = "unknown";
+        let content = payload;
+        if (colonIndex !== -1) {
+          role = payload.slice(0, colonIndex).trim();
+          content = payload.slice(colonIndex + 1).trim();
+        }
+        const displayRole = roleMap[role] || role;
+        const li = document.createElement('li');
+        li.className = role;
+        li.textContent = `${displayRole}: ${content}`;
+        messagesList.appendChild(li);
+        // auto-scroll live messages to bottom
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+      else {
+        // fallback
+        const li = document.createElement('li');
+        li.textContent = data;
+        messagesList.appendChild(li);
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+    };
+
+    function sendMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById("messageText");
+      if (!input.value) return;
+      ws.send(input.value);
+      input.value = '';
+    }
+  </script>
+</body>
+</html>

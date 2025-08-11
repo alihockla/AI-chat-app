@@ -39,6 +39,8 @@ If you want to use a local LLM running in Ollama, set the `USE_OLLAMA` flag and 
 USE_OLLAMA=true LLM_MODEL=gemma3 uvicorn chat_app.main:app
 ```
 
+Launch a browser and navigate to [http://localhost:8000](http://localhost:8000) to access the chat application.
+
 ## Testing
 Run the tests using pytest
 

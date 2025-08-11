@@ -45,7 +45,6 @@ app = FastAPI(lifespan=lifespan)
 
 # simple HTML frontend, taken from FastAPI documentation
 # https://fastapi.tiangolo.com/advanced/websockets/#websockets
-# Later, modified by an LLM to add client_id logic.
 @app.get("/")
 async def get():
     with open(config.index_html) as f:
@@ -60,11 +59,6 @@ async def get():
 # across page reloads.
 # Note: this is meant to be a simple approach to maintain chat history only across page reloads. If a tab is
 # closed and reopened the client_id will change, and the chat history will not be preserved.
-
-# I used the help of an LLM to consider different approaches, and to modify the HTML and JS.
-# I also used the LLM to modify the HTML and JS to separate chat history from live messages.
-# I developed the logic in the server (in `chat_manager.connect()`) to retrieve the chat history (if it exists)
-# when a client connects and send it to the websocket.
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, client_id: str = Query(...)):
     await chat_manager.connect(client_id, websocket)

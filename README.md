@@ -2,6 +2,12 @@
 
 A minimal, event-driven AI chat application
 
+# Architecture Diagram
+
+![Architecture Diagram](arch_diagram.png)
+
+---
+
 # Requirements
 
   * Python 3.13 or newer
@@ -41,7 +47,3 @@ uv pip install -r requirements-test.txt
 
 pytest --cov=chat_app --cov-report term-missing tests
 ```
-
-## Architecture Diagram
-
-![Architecture Diagram](arch_diagram.png)

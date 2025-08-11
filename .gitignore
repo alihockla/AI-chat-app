@@ -9,4 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
+# Intellij
+.idea/
+
 *.DS_Store

@@ -1,6 +1,6 @@
-# CoCounsel AI Take Home Assessment
+# AI Chat App
 
-Minimal AI Chat Application
+A minimal, event-driven AI chat application
 
 # Requirements
 
